@@ -6,7 +6,7 @@ Step 1. Install [tesseract-ocr](https://github.com/tesseract-ocr/tessdoc) and ad
 
 Step 2. Clone repo
 
-Step 3. Set up virtual environment and pip install requirements.txt
+Step 3. Set up virtual environment and `pip install requirements.txt`
 
 Step 4. Add/Remove names from `bin/banlist.csv`
 
