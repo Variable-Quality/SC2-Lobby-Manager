@@ -5,10 +5,19 @@ from tesseract_ocr import TesseractManager
 from time import sleep
 from time import perf_counter
 
+screen_x, screen_y = pyautogui.size()
+
+if screen_x == 2560 and screen_y == 1440:
+    OFFSET_X = (210, 260)
+    OFFSET_Y = (240, 800)
+elif screen_x == 1920 and screen_y == 1080:
+    OFFSET_X = (158, 323)
+    OFFSET_Y = (197, 815)
+else:
+    Exception("Unsupported monitor size! Sorry, I'm a lazy fuck.")
+
 IMAGES = "bin/images/"
 BANLIST = "bin/banlist.csv"
-OFFSET_X = (210, 260)
-OFFSET_Y = (240 , 800)
 SLEEP_INTERVAL = .1
 
 
