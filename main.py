@@ -26,6 +26,8 @@ class GuiManager():
             reader = csv.reader(csvfile)
             for row in reader:
                 self.banlist.append(str(row[0]))
+
+        print("Banlist updated!")
         
     def add_to_banlist(self, name=None, names=[]):
         if len(names) > 0:
@@ -56,6 +58,7 @@ class GuiManager():
     #Passes in one of the tuples from t.read_image()
     #Assumes the tuple has been verified as a user who needs to be kicked
     def click_and_kick(self, user:tuple):
+        #TODO: investigate auto click bug
         avg_x = ((user[0][2] + user[0][0])/2) + OFFSET_X[0]
         avg_y = ((user[0][3] + user[0][1])/2) + OFFSET_Y[0]
 
