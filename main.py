@@ -4,12 +4,21 @@ import csv
 from tesseract_ocr import TesseractManager
 from time import sleep
 from time import perf_counter
+#Reference resolution is
+ref_res = (2160, 1440)
+current_res = pyautogui.size()
+
+OFFSET_COORDS = [210, 240, 260, 800]
+
+scaled_coords = [int(OFFSET_COORDS[i] * current_res[i % 2] / ref_res[i % 2]) for i in range(4)]
+
+OFFSET_X = (scaled_coords[0], scaled_coords[2])
+OFFSET_Y = (scaled_coords[1], scaled_coords[3])
 
 IMAGES = "bin/images/"
 BANLIST = "bin/banlist.csv"
-OFFSET_X = (210, 260)
-OFFSET_Y = (240 , 800)
-SLEEP_INTERVAL = .1
+SLEEP_INTERVAL = .1 #Seconds
+AFK_INTERVAL = 180 #Seconds
 
 
 class GuiManager():
@@ -19,9 +28,13 @@ class GuiManager():
         self.banlist = []
         self.exit = False
         self.pause = False
+        self.afk = False
+        self.host_mode = True
+        self.debug = False
         self.update_banlist()
         
     def update_banlist(self):
+        self.banlist = []
         with open(BANLIST, newline='') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
@@ -65,7 +78,7 @@ class GuiManager():
         pyautogui.click(x = avg_x, y = avg_y, button="right")
         sleep(.02)
         try:
-            kick_coords = pyautogui.center(pyautogui.locateOnScreen(f"{IMAGES}button.png", confidence=.95))
+            kick_coords = pyautogui.center(pyautogui.locateOnScreen(f"{IMAGES}button.png", confidence=.98))
             pyautogui.click(x = kick_coords.x, y = kick_coords.y, button = "left")
         except pyautogui.ImageNotFoundException:
             print("Kick button not found on screen! Continuing...")
@@ -73,20 +86,18 @@ class GuiManager():
 
     
     
-    def kick_from_blacklist(self):
+    def read_from_blacklist(self):
    
         t = TesseractManager(f"{IMAGES}namelist.png", .5)
 
         g.get_names()
-        result = t.read_image()
+        result = t.read_image(self.debug)
         keys = []
         #Removes clan tags and the AI
         #Idk if these chars are banned in names tho is the problem
         blacklist_chars = ["<",">","."]
         for key in result.keys():
-            print(result[key])
             keys.append(key)
-        print(keys)
         keys_to_remove = []
         for key in keys:
             if any(char in key for char in blacklist_chars) or key == " " or key not in self.banlist:
@@ -97,8 +108,11 @@ class GuiManager():
             keys.remove(key)
 
         print(keys)
-        if len(keys) > 0:
+        if len(keys) > 0 and self.host_mode:
             g.click_and_kick(result[keys[0]])
+
+        elif len(keys) > 0 and not self.host_mode:
+            print(f"Detected banned player(s) in lobby!\n{keys}")
         else:
             print("No targets found.")
 
@@ -111,17 +125,39 @@ class GuiManager():
         else:
             print("Pausing...")
         self.pause = not self.pause
-    
+
+    def toggle_afk(self):
+        self.afk = not self.afk
+
+    def toggle_host_mode(self):
+        self.host_mode = not self.host_mode
+
+    def toggle_debug(self):
+        self.debug = not self.debug
+
     def mainloop(self):
+
         keyboard.add_hotkey("ctrl+n", self.disable_loop)
         keyboard.add_hotkey("ctrl+r", self.update_banlist)
         keyboard.add_hotkey("ctrl+p", self.pause_loop)
-        input("Init done. Press enter to begin.")
+        keyboard.add_hotkey("ctrl+a", self.toggle_afk)
+        keyboard.add_hotkey("ctrl+h", self.toggle_host_mode)
+        #This one is just for me :3
+        keyboard.add_hotkey("ctrl+d", self.toggle_debug)
+
         self.exit = False
+        prev_click_time = 0
         while not self.exit:
-            s_time = perf_counter()
-            self.kick_from_blacklist()
-            e_time = perf_counter()
+            
+            if self.afk and (perf_counter() - prev_click_time) > AFK_INTERVAL:
+                tmp_mousepos_x, tmp_mousepos_y = pyautogui.position()
+                #Assumes Starcraft is visible on main monitor
+                #Cba changing this
+                pyautogui.click(x=200,y=200)
+                pyautogui.moveTo(x=tmp_mousepos_x, y=tmp_mousepos_y)
+                prev_click_time = perf_counter()
+                
+            self.read_from_blacklist()
             sleep(SLEEP_INTERVAL)
 
             while self.pause:
