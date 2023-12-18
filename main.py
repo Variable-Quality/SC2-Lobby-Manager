@@ -5,12 +5,12 @@ from tesseract_ocr import TesseractManager
 from time import sleep
 from time import perf_counter
 #Reference resolution is
-ref_res = (2160, 1440)
+ref_res = (2560, 1440)
 current_res = pyautogui.size()
 
-OFFSET_COORDS = [210, 240, 260, 800]
+OFFSET_COORDS = [170, 240, 260, 800]
 
-scaled_coords = [int(OFFSET_COORDS[i] * current_res[i % 2] / ref_res[i % 2]) for i in range(4)]
+scaled_coords = [int((OFFSET_COORDS[i] * current_res[i % 2]) / ref_res[i % 2]) for i in range(4)]
 
 OFFSET_X = (scaled_coords[0], scaled_coords[2])
 OFFSET_Y = (scaled_coords[1], scaled_coords[3])
@@ -72,9 +72,9 @@ class GuiManager():
     #Assumes the tuple has been verified as a user who needs to be kicked
     def click_and_kick(self, user:tuple):
         #TODO: investigate auto click bug
+        print(f"{user[0]}")
         avg_x = ((user[0][2] + user[0][0])/2) + OFFSET_X[0]
         avg_y = ((user[0][3] + user[0][1])/2) + OFFSET_Y[0]
-
         pyautogui.click(x = avg_x, y = avg_y, button="right")
         sleep(.02)
         try:
