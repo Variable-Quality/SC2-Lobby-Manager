@@ -20,3 +20,5 @@ Keybinds:
 `ctrl+r`: Reloads ban list, so if you make changes to it while the program is running, use this
 
 `ctrl+p`: Pause the script until hotkey is pressed again
+
+`ctrl+a`: Enable Anti-AFK autoclick. Happens every 3 minutes.
