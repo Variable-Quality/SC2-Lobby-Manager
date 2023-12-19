@@ -5,7 +5,10 @@ from tesseract_ocr import TesseractManager
 from time import sleep
 from time import perf_counter
 import curses
-#Reference resolution is
+import math
+
+
+#Reference resolution is 2560x1440
 ref_res = (2560, 1440)
 current_res = pyautogui.size()
 
@@ -40,8 +43,6 @@ class OCRManager():
             reader = csv.reader(csvfile)
             for row in reader:
                 self.banlist.append(str(row[0]))
-
-        print("Banlist updated!")
         
     def add_to_banlist(self, name=None, names=[]):
         if len(names) > 0:
@@ -71,9 +72,7 @@ class OCRManager():
 
     #Passes in one of the tuples from t.read_image()
     #Assumes the tuple has been verified as a user who needs to be kicked
-    def click_and_kick(self, user:tuple):
-        #TODO: investigate auto click bug
-        print(f"{user[0]}")
+    def click_and_kick(self, user:tuple, stdscr):
         avg_x = ((user[0][2] + user[0][0])/2) + OFFSET_X[0]
         avg_y = ((user[0][3] + user[0][1])/2) + OFFSET_Y[0]
         pyautogui.click(x = avg_x, y = avg_y, button="right")
@@ -82,7 +81,7 @@ class OCRManager():
             kick_coords = pyautogui.center(pyautogui.locateOnScreen(f"{IMAGES}button.png", confidence=.98))
             pyautogui.click(x = kick_coords.x, y = kick_coords.y, button = "left")
         except pyautogui.ImageNotFoundException:
-            print("Kick button not found on screen! Continuing...")
+            stdscr.addstr(8,0,"Kick button not found on screen! Continuing...")
         
 
     
@@ -110,10 +109,10 @@ class OCRManager():
 
         stdscr.addstr(3, 0, str(keys))
         if len(keys) > 0 and self.host_mode:
-            g.click_and_kick(result[keys[0]])
+            g.click_and_kick(result[keys[0]], stdscr)
 
         elif len(keys) > 0 and not self.host_mode:
-            stdscr.addstr(4, 0, f"Detected banned player(s) in lobby!\n{keys}")
+            stdscr.addstr(4, 0, f"Detected banned player(s) in lobby!")
         else:
             stdscr.addstr(4, 0, "No targets found.")
 
@@ -121,34 +120,19 @@ class OCRManager():
         self.exit = True
 
     def pause_loop(self):
-        if self.pause:
-            print("Unpausing...")
-        else:
-            print("Pausing...")
         self.pause = not self.pause
 
     def toggle_afk(self):
-        if self.afk:
-            print("Anti-Afk off!")
-        else:
-            print("Anti-afk on!")
-
         self.afk = not self.afk
 
     def toggle_host_mode(self):
-        if self.host_mode:
-            print("Host mode disabled!")
-        else:
-            print("Host mode enabled!")
-
         self.host_mode = not self.host_mode
 
     def toggle_debug(self):
-        print("Debug toggled!")
         self.debug = not self.debug
 
     def mainloop(self, stdscr):
-
+        curses.curs_set(0)
         keyboard.add_hotkey("ctrl+n", self.disable_loop)
         keyboard.add_hotkey("ctrl+r", self.update_banlist)
         keyboard.add_hotkey("ctrl+p", self.pause_loop)
@@ -163,10 +147,13 @@ class OCRManager():
 
 
         while not self.exit:
+            last_click = perf_counter() - prev_click_time
+            last_click_s = f"| Time since last click: {math.floor(last_click)}s" if self.afk else ""
             stdscr.clear()
             stdscr.addstr(0, 0, f"Loop Paused: {self.pause}")
-            stdscr.addstr(1, 0, f"Anti-Afk Enabled: {self.afk}")
+            stdscr.addstr(1, 0, f"Anti-Afk Enabled: {self.afk} {last_click_s}")
             stdscr.addstr(2, 0, f"Host Mode Enabled: {self.host_mode}")
+           
             if self.afk and (perf_counter() - prev_click_time) > AFK_INTERVAL:
                 tmp_mousepos_x, tmp_mousepos_y = pyautogui.position()
                 #Assumes Starcraft is visible on main monitor
@@ -174,13 +161,12 @@ class OCRManager():
                 pyautogui.click(x=200,y=200)
                 pyautogui.moveTo(x=tmp_mousepos_x, y=tmp_mousepos_y)
                 prev_click_time = perf_counter()
-                
-            self.read_from_blacklist(stdscr)
+
+            if not self.pause:    
+                self.read_from_blacklist(stdscr)
+
             stdscr.refresh()
             sleep(SLEEP_INTERVAL)
-
-            while self.pause:
-                sleep(.5)
             
 
         print("Done!")
