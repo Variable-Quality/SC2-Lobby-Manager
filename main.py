@@ -4,11 +4,12 @@ import csv
 from tesseract_ocr import TesseractManager
 from time import sleep
 from time import perf_counter
+import curses
 #Reference resolution is
 ref_res = (2560, 1440)
 current_res = pyautogui.size()
 
-OFFSET_COORDS = [170, 240, 260, 800]
+OFFSET_COORDS = [198, 280, 260, 800]
 
 scaled_coords = [int((OFFSET_COORDS[i] * current_res[i % 2]) / ref_res[i % 2]) for i in range(4)]
 
@@ -21,7 +22,7 @@ SLEEP_INTERVAL = .1 #Seconds
 AFK_INTERVAL = 180 #Seconds
 
 
-class GuiManager():
+class OCRManager():
 
     def __init__(self):
         self.screenWidth, self.screenHeight = pyautogui.size()
@@ -86,7 +87,7 @@ class GuiManager():
 
     
     
-    def read_from_blacklist(self):
+    def read_from_blacklist(self, stdscr):
    
         t = TesseractManager(f"{IMAGES}namelist.png", .5)
 
@@ -107,14 +108,14 @@ class GuiManager():
             del result[key]
             keys.remove(key)
 
-        print(keys)
+        stdscr.addstr(3, 0, str(keys))
         if len(keys) > 0 and self.host_mode:
             g.click_and_kick(result[keys[0]])
 
         elif len(keys) > 0 and not self.host_mode:
-            print(f"Detected banned player(s) in lobby!\n{keys}")
+            stdscr.addstr(4, 0, f"Detected banned player(s) in lobby!\n{keys}")
         else:
-            print("No targets found.")
+            stdscr.addstr(4, 0, "No targets found.")
 
     def disable_loop(self):
         self.exit = True
@@ -127,15 +128,26 @@ class GuiManager():
         self.pause = not self.pause
 
     def toggle_afk(self):
+        if self.afk:
+            print("Anti-Afk off!")
+        else:
+            print("Anti-afk on!")
+
         self.afk = not self.afk
 
     def toggle_host_mode(self):
+        if self.host_mode:
+            print("Host mode disabled!")
+        else:
+            print("Host mode enabled!")
+
         self.host_mode = not self.host_mode
 
     def toggle_debug(self):
+        print("Debug toggled!")
         self.debug = not self.debug
 
-    def mainloop(self):
+    def mainloop(self, stdscr):
 
         keyboard.add_hotkey("ctrl+n", self.disable_loop)
         keyboard.add_hotkey("ctrl+r", self.update_banlist)
@@ -147,8 +159,14 @@ class GuiManager():
 
         self.exit = False
         prev_click_time = 0
+
+
+
         while not self.exit:
-            
+            stdscr.clear()
+            stdscr.addstr(0, 0, f"Loop Paused: {self.pause}")
+            stdscr.addstr(1, 0, f"Anti-Afk Enabled: {self.afk}")
+            stdscr.addstr(2, 0, f"Host Mode Enabled: {self.host_mode}")
             if self.afk and (perf_counter() - prev_click_time) > AFK_INTERVAL:
                 tmp_mousepos_x, tmp_mousepos_y = pyautogui.position()
                 #Assumes Starcraft is visible on main monitor
@@ -157,7 +175,8 @@ class GuiManager():
                 pyautogui.moveTo(x=tmp_mousepos_x, y=tmp_mousepos_y)
                 prev_click_time = perf_counter()
                 
-            self.read_from_blacklist()
+            self.read_from_blacklist(stdscr)
+            stdscr.refresh()
             sleep(SLEEP_INTERVAL)
 
             while self.pause:
@@ -169,7 +188,7 @@ class GuiManager():
 
 
 if __name__ == "__main__":
-    g = GuiManager()
-    g.mainloop()
+    g = OCRManager()
+    curses.wrapper(g.mainloop)
         
 
