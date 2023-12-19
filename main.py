@@ -154,7 +154,7 @@ class OCRManager():
             stdscr.addstr(1, 0, f"Anti-Afk Enabled: {self.afk} {last_click_s}")
             stdscr.addstr(2, 0, f"Host Mode Enabled: {self.host_mode}")
            
-            if self.afk and (perf_counter() - prev_click_time) > AFK_INTERVAL:
+            if self.afk and last_click > AFK_INTERVAL:
                 tmp_mousepos_x, tmp_mousepos_y = pyautogui.position()
                 #Assumes Starcraft is visible on main monitor
                 #Cba changing this
