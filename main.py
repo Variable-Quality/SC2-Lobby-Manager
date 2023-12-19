@@ -19,10 +19,23 @@ scaled_coords = [int((OFFSET_COORDS[i] * current_res[i % 2]) / ref_res[i % 2]) f
 OFFSET_X = (scaled_coords[0], scaled_coords[2])
 OFFSET_Y = (scaled_coords[1], scaled_coords[3])
 
+screen_x, screen_y = pyautogui.size()
+
+if screen_x == 2560 and screen_y == 1440:
+    OFFSET_X = (210, 260)
+    OFFSET_Y = (240, 800)
+elif screen_x == 1920 and screen_y == 1080:
+    OFFSET_X = (158, 323)
+    OFFSET_Y = (197, 815)
+else:
+    Exception("Unsupported monitor size! Sorry, I'm a lazy fuck.")
+
 IMAGES = "bin/images/"
 BANLIST = "bin/banlist.csv"
+
 SLEEP_INTERVAL = .1 #Seconds
 AFK_INTERVAL = 180 #Seconds
+
 
 
 class OCRManager():
