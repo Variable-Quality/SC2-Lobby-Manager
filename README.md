@@ -22,3 +22,5 @@ Keybinds:
 `ctrl+p`: Pause the script until hotkey is pressed again
 
 `ctrl+a`: Enable Anti-AFK autoclick. Happens every 3 minutes.
+
+`ctrl+h`: Toggles "Host Mode" off and on. Host mode will kick players, non-host mode will only notify the user of banned players in the lobby.
